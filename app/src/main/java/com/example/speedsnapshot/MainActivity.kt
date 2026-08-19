@@ -7,10 +7,31 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.*
+import android.os.Looper
 
 const val LOCATION_REQUEST_CODE = 100
 
+
 class MainActivity : AppCompatActivity() {
+    val locationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        2000L   // ask for a new location every 2 seconds
+    ).build()
+
+    val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            val location = result.lastLocation ?: return
+
+            val speedMs = location.speed
+            val speedKmh = speedMs * 3.6f
+            val accuracy = location.accuracy
+
+            tvSpeed.text = "%.1f km/h".format(speedKmh)
+            tvAccuracy.text = "Accuracy: %.1f m".format(accuracy)
+            updateSpeedColor(speedKmh)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
