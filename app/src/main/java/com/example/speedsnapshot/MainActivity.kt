@@ -2,6 +2,7 @@ package com.example.speedsnapshot
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color // <-- Added this import for your color function!
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +12,6 @@ import com.google.android.gms.location.*
 import android.os.Looper
 
 const val LOCATION_REQUEST_CODE = 100
-
 
 class MainActivity : AppCompatActivity() {
     val locationRequest = LocationRequest.Builder(
@@ -73,5 +73,15 @@ class MainActivity : AppCompatActivity() {
                 ).show()
             }
         }
+    }
+
+    // Integrated UI function
+    fun updateSpeedColor(speedKmh: Float) {
+        val color = when {
+            speedKmh < 10f -> Color.GREEN
+            speedKmh < 30f -> Color.parseColor("#FFC107") // amber
+            else           -> Color.RED
+        }
+        tvSpeed.setTextColor(color)
     }
 }
