@@ -2,18 +2,30 @@ package com.example.speedsnapshot
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Color // <-- Added this import for your color function!
+import android.graphics.Color
 import android.os.Bundle
+import android.os.Looper
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
-import android.os.Looper
 
 const val LOCATION_REQUEST_CODE = 100
 
 class MainActivity : AppCompatActivity() {
+
+    // Views - bound in onCreate()
+    lateinit var tvSpeed: TextView
+    lateinit var tvAccuracy: TextView
+    lateinit var btnStart: Button
+    lateinit var btnStop: Button
+
+    // Location client - needed to actually request/remove updates
+    lateinit var fusedClient: FusedLocationProviderClient
+
     val locationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY,
         2000L   // ask for a new location every 2 seconds
@@ -36,6 +48,41 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Bind views to the layout
+        tvSpeed = findViewById(R.id.tvSpeed)
+        tvAccuracy = findViewById(R.id.tvAccuracy)
+        btnStart = findViewById(R.id.btnStart)
+        btnStop = findViewById(R.id.btnStop)
+
+        fusedClient = LocationServices.getFusedLocationProviderClient(this)
+
+        btnStart.setOnClickListener {
+            if (hasLocationPermission()) {
+                try {
+                    fusedClient.requestLocationUpdates(
+                        locationRequest, locationCallback, Looper.getMainLooper()
+                    )
+                } catch (e: SecurityException) {
+                    Toast.makeText(this, "Permission was denied.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                checkAndRequestPermission()
+            }
+        }
+
+        btnStop.setOnClickListener {
+            fusedClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try {
+            fusedClient.removeLocationUpdates(locationCallback)
+        } catch (e: SecurityException) {
+            // no-op, nothing to clean up if permission was never granted
+        }
     }
 
     fun hasLocationPermission(): Boolean {
@@ -75,7 +122,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Integrated UI function
     fun updateSpeedColor(speedKmh: Float) {
         val color = when {
             speedKmh < 10f -> Color.GREEN
